@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTML5 Dev Studio & Games Hub</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        button { padding: 15px; font-size: 18px; margin: 10px; }
+        textarea, iframe { width: 80%; margin: 10px; }
+        #gameContainer, #studioContainer { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Dashboard -->
+    <div id="dashboardContainer">
+        <h1>HTML5 Games & Dev Studio</h1>
+        <button onclick="openPage('studio')">Open Dev Studio</button>
+        <button onclick="openPage('games')">Play Games</button>
+    </div>
+
+    <!-- Dev Studio -->
+    <div id="studioContainer">
+        <h1>HTML5 Dev Studio</h1>
+        <textarea id="gameCode" rows="10" placeholder="Write your HTML5 game code here..."></textarea>
+        <button onclick="runGame()">Run Game</button>
+        <button onclick="openPage('dashboard')">Back to Dashboard</button>
+        <br>
+        <iframe id="gameFrame" height="500"></iframe>
+    </div>
+
+    <!-- Games Hub -->
+    <div id="gameContainer">
+        <h1>HTML5 Games Hub</h1>
+        <select id="gameSelector" onchange="loadGame()">
+            <option value="flappy">Flappy Bird</option>
+            <option value="snake">Snake</option>
+            <option value="pong">Pong</option>
+        </select>
+        <br>
+        <div id="gameSpace"></div>
+        <button onclick="openPage('dashboard')">Back to Dashboard</button>
+    </div>
+
+    <script>
+        function openPage(page) {
+            document.getElementById("dashboardContainer").style.display = page === "dashboard" ? "block" : "none";
+            document.getElementById("studioContainer").style.display = page === "studio" ? "block" : "none";
+            document.getElementById("gameContainer").style.display = page === "games" ? "block" : "none";
+        }
+
+        function runGame() {
+            const code = document.getElementById("gameCode").value;
+            const gameFrame = document.getElementById("gameFrame").contentWindow.document;
+            gameFrame.open();
+            gameFrame.write(code);
+            gameFrame.close();
+        }
+
+        const games = {
+            flappy: "<canvas id='gameCanvas' width='400' height='600'></canvas>",
+            snake: "<canvas id='gameCanvas' width='400' height='400'></canvas>",
+            pong: "<canvas id='gameCanvas' width='600' height='400'></canvas>"
+        };
+
+        function loadGame() {
+            const selectedGame = document.getElementById("gameSelector").value;
+            document.getElementById("gameSpace").innerHTML = games[selectedGame];
+            startGame(selectedGame);
+        }
+
+        function startGame(game) {
+            const canvas = document.getElementById("gameCanvas");
+            const ctx = canvas.getContext("2d");
+
+            if (game === "flappy") {
+                let birdY = 200, velocity = 0, gravity = 0.8;
+                document.addEventListener("keydown", () => velocity = -10);
+                function gameLoop() {
+                    velocity += gravity;
+                    birdY += velocity;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = "yellow";
+                    ctx.fillRect(50, birdY, 30, 30);
+                    requestAnimationFrame(gameLoop);
+                }
+                gameLoop();
+            }
+
+            if (game === "snake") {
+                let snake = [{x: 200, y: 200}], food = {x: 100, y: 100}, direction = "right";
+                document.addEventListener("keydown", (event) => {
+                    if(event.key === "ArrowUp") direction = "up";
+                    if(event.key === "ArrowDown") direction = "down";
+                    if(event.key === "ArrowLeft") direction = "left";
+                    if(event.key === "ArrowRight") direction = "right";
+                });
+                function gameLoop() {
+                    let head = { ...snake[0] };
+                    if (direction === "up") head.y -= 20;
+                    if (direction === "down") head.y += 20;
+                    if (direction === "left") head.x -= 20;
+                    if (direction === "right") head.x += 20;
+                    snake.unshift(head);
+                    if (head.x === food.x && head.y === food.y) food = {x: Math.random()*400, y: Math.random()*400};
+                    else snake.pop();
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = "green";
+                    snake.forEach(part => ctx.fillRect(part.x, part.y, 20, 20));
+                    ctx.fillStyle = "red";
+                    ctx.fillRect(food.x, food.y, 20, 20);
+                    requestAnimationFrame(gameLoop);
+                }
+                gameLoop();
+            }
+
+            if (game === "pong") {
+                let paddleY = canvas.height / 2 - 40, ballX = 300, ballY = 200, ballDX = 3, ballDY = 3;
+                document.addEventListener("mousemove", (e) => paddleY = e.clientY - 40);
+                function gameLoop() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(10, paddleY, 10, 80);
+                    ballX += ballDX; ballY += ballDY;
+                    if (ballY <= 0 || ballY >= canvas.height) ballDY *= -1;
+                    if (ballX <= 20 && ballY >= paddleY && ballY <= paddleY + 80) ballDX *= -1;
+                    ctx.beginPath(); ctx.arc(ballX, ballY, 10, 0, Math.PI * 2); ctx.fillStyle = "white"; ctx.fill();
+                    requestAnimationFrame(gameLoop);
+                }
+                gameLoop();
+            }
+        }
+
+        openPage("dashboard"); // Default page
+    </script>
+
+</body>
+</html>
